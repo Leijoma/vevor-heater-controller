@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vevor Heater Control</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 500px;
+            width: 100%;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .header .status {
+            font-size: 14px;
+            opacity: 0.9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4ade80;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .content {
+            padding: 30px 20px;
+        }
+
+        .temp-display {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .current-temp {
+            font-size: 72px;
+            font-weight: 700;
+            color: #1f2937;
+            line-height: 1;
+        }
+
+        .temp-label {
+            font-size: 14px;
+            color: #6b7280;
+            margin-top: 5px;
+        }
+
+        .temp-trend {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 5px;
+        }
+
+        .status-banner {
+            background: #f9fafb;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            border: 3px solid #e5e7eb;
+            transition: all 0.3s;
+        }
+
+        .status-banner.running {
+            background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+            border-color: #10b981;
+        }
+
+        .status-banner.cooling {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            border-color: #3b82f6;
+        }
+
+        .status-banner-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .status-banner-text {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .status-banner-subtext {
+            font-size: 14px;
+            color: #6b7280;
+            margin-top: 5px;
+        }
+
+        .status-card {
+            background: #f9fafb;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .status-row:last-child {
+            border-bottom: none;
+        }
+
+        .status-label {
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        .status-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .heater-state {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .state-off { background: #e5e7eb; color: #6b7280; }
+        .state-preheat { background: #fef3c7; color: #92400e; }
+        .state-ignition { background: #fed7aa; color: #9a3412; }
+        .state-heating { background: #dcfce7; color: #166534; }
+        .state-cooldown { background: #dbeafe; color: #1e40af; }
+
+        .target-control {
+            background: #f9fafb;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .target-label {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .target-slider {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .target-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            background: #667eea;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .target-btn:hover {
+            background: #5568d3;
+            transform: scale(1.05);
+        }
+
+        .target-btn:active {
+            transform: scale(0.95);
+        }
+
+        .target-value {
+            flex: 1;
+            text-align: center;
+            font-size: 36px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .control-btn {
+            flex: 1;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-start {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-start:hover {
+            background: #059669;
+        }
+
+        .btn-stop {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-stop:hover {
+            background: #dc2626;
+        }
+
+        .control-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .mode-toggle {
+            background: #f9fafb;
+            border-radius: 12px;
+            padding: 8px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: transparent;
+            color: #6b7280;
+        }
+
+        .mode-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 300px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 20px;
+        }
+
+        .pin-input {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 24px;
+            text-align: center;
+            letter-spacing: 8px;
+            margin-bottom: 20px;
+        }
+
+        .pin-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-cancel {
+            background: #e5e7eb;
+            color: #6b7280;
+        }
+
+        .btn-confirm {
+            background: #667eea;
+            color: white;
+        }
+
+        .error-message {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        @media (max-width: 480px) {
+            .current-temp {
+                font-size: 56px;
+            }
+
+            .target-value {
+                font-size: 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Vevor Heater</h1>
+            <div class="status">
+                <span class="status-dot"></span>
+                <span id="connectionStatus">Ansluten</span>
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- Temperature Display -->
+            <div class="temp-display">
+                <div class="current-temp" id="currentTemp">--</div>
+                <div class="temp-label">Aktuell temperatur</div>
+                <div class="temp-trend" id="tempTrend"></div>
+            </div>
+
+            <!-- Status Banner -->
+            <div class="status-banner" id="statusBanner">
+                <div class="status-banner-icon" id="statusIcon">⚪</div>
+                <div class="status-banner-text" id="statusText">OFF</div>
+                <div class="status-banner-subtext" id="statusSubtext">Värmaren är avstängd</div>
+            </div>
+
+            <!-- Status Card -->
+            <div class="status-card">
+                <div class="status-row">
+                    <span class="status-label">Status</span>
+                    <span class="heater-state state-off" id="heaterState">OFF</span>
+                </div>
+                <div class="status-row">
+                    <span class="status-label">Effekt</span>
+                    <span class="status-value" id="powerLevel">--</span>
+                </div>
+                <div class="status-row">
+                    <span class="status-label">Spänning</span>
+                    <span class="status-value" id="voltage">--</span>
+                </div>
+                <div class="status-row">
+                    <span class="status-label">Fläkt</span>
+                    <span class="status-value" id="fanSpeed">--</span>
+                </div>
+            </div>
+
+            <!-- Target Temperature Control -->
+            <div class="target-control">
+                <div class="target-label">Måltemperatur</div>
+                <div class="target-slider">
+                    <button class="target-btn" onclick="adjustTarget(-1)">−</button>
+                    <div class="target-value" id="targetTemp">--°</div>
+                    <button class="target-btn" onclick="adjustTarget(1)">+</button>
+                </div>
+            </div>
+
+            <!-- Start/Stop Controls -->
+            <div class="controls">
+                <button class="control-btn btn-start" onclick="startHeater()">Starta</button>
+                <button class="control-btn btn-stop" onclick="stopHeater()">Stoppa</button>
+            </div>
+
+            <!-- Mode Toggle -->
+            <div class="mode-toggle">
+                <button class="mode-btn active" id="autoModeBtn">Auto</button>
+                <button class="mode-btn" id="manualModeBtn">Manuell</button>
+            </div>
+        </div>
+
+        <div class="footer">
+            Vevor Heater Controller v2.0
+        </div>
+    </div>
+
+    <!-- PIN Modal -->
+    <div class="modal" id="pinModal">
+        <div class="modal-content">
+            <div class="modal-title" id="modalTitle">Ange PIN-kod</div>
+            <input type="password" class="pin-input" id="pinInput" maxlength="4" placeholder="••••">
+            <div class="error-message" id="errorMessage"></div>
+            <div class="modal-buttons">
+                <button class="modal-btn btn-cancel" onclick="closeModal()">Avbryt</button>
+                <button class="modal-btn btn-confirm" onclick="confirmPin()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let token = null;
+        let targetTemp = 22;
+        let pendingAction = null;
+
+        // Poll status every 2 seconds
+        setInterval(updateStatus, 2000);
+        updateStatus();
+
+        async function updateStatus() {
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+
+                // Update temperature
+                document.getElementById('currentTemp').textContent =
+                    data.temperature.current.toFixed(1) + '°';
+
+                // Update trend
+                const trend = data.temperature.trend;
+                let trendText = '';
+                if (Math.abs(trend) > 0.05) {
+                    const arrow = trend > 0 ? '↑' : '↓';
+                    trendText = `${arrow} ${Math.abs(trend).toFixed(2)}°C/min`;
+                }
+                document.getElementById('tempTrend').textContent = trendText;
+
+                // Update target
+                targetTemp = data.temperature.target;
+                document.getElementById('targetTemp').textContent = targetTemp + '°';
+
+                // Update heater state
+                const stateElement = document.getElementById('heaterState');
+                stateElement.textContent = data.heater.state;
+                stateElement.className = 'heater-state state-' + data.heater.state.toLowerCase();
+
+                // Update status banner
+                const statusBanner = document.getElementById('statusBanner');
+                const statusIcon = document.getElementById('statusIcon');
+                const statusText = document.getElementById('statusText');
+                const statusSubtext = document.getElementById('statusSubtext');
+                const state = data.heater.state.toUpperCase();
+
+                // Reset classes
+                statusBanner.className = 'status-banner';
+
+                // Update based on state
+                if (state === 'OFF' || state === 'UNKNOWN') {
+                    statusIcon.textContent = '⚪';
+                    statusText.textContent = 'AVSTÄNGD';
+                    statusSubtext.textContent = 'Värmaren är avstängd';
+                } else if (state === 'PREHEAT' || state === 'IGNITION') {
+                    statusBanner.classList.add('running');
+                    statusIcon.textContent = '🔶';
+                    statusText.textContent = 'STARTAR';
+                    statusSubtext.textContent = 'Värmaren förbereder start...';
+                } else if (state === 'HEATING') {
+                    statusBanner.classList.add('running');
+                    statusIcon.textContent = '🔥';
+                    statusText.textContent = 'IGÅNG';
+                    statusSubtext.textContent = 'Värmaren är igång och värmer';
+                } else if (state === 'COOLDOWN') {
+                    statusBanner.classList.add('cooling');
+                    statusIcon.textContent = '❄️';
+                    statusText.textContent = 'STÄNGER AV';
+                    statusSubtext.textContent = 'Värmaren kyler ner innan avstängning';
+                }
+
+                // Update other values
+                document.getElementById('powerLevel').textContent = data.heater.power;
+                document.getElementById('voltage').textContent =
+                    data.heater.voltage > 0 ? data.heater.voltage.toFixed(1) + 'V' : '--';
+                document.getElementById('fanSpeed').textContent =
+                    data.heater.fanSpeed > 0 ? data.heater.fanSpeed + ' RPM' : '--';
+
+                // Update mode buttons
+                const isAuto = data.control.mode === 'auto';
+                document.getElementById('autoModeBtn').classList.toggle('active', isAuto);
+                document.getElementById('manualModeBtn').classList.toggle('active', !isAuto);
+
+                // Update connection status
+                document.getElementById('connectionStatus').textContent = 'Ansluten';
+            } catch (error) {
+                console.error('Failed to update status:', error);
+                document.getElementById('connectionStatus').textContent = 'Anslutningsfel';
+            }
+        }
+
+        async function adjustTarget(delta) {
+            const newTarget = Math.max(5, Math.min(35, targetTemp + delta));
+
+            if (newTarget === targetTemp) return;
+
+            if (!token) {
+                pendingAction = () => adjustTarget(delta);
+                showModal('Ange PIN för att ändra temperatur');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/target', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ target: newTarget })
+                });
+
+                if (response.status === 401) {
+                    token = null;
+                    adjustTarget(delta);
+                    return;
+                }
+
+                if (response.ok) {
+                    targetTemp = newTarget;
+                    document.getElementById('targetTemp').textContent = targetTemp + '°';
+                } else {
+                    showError('Misslyckades att ändra temperatur');
+                }
+            } catch (error) {
+                console.error('Failed to set target:', error);
+                showError('Nätverksfel');
+            }
+        }
+
+        async function startHeater() {
+            if (!token) {
+                pendingAction = startHeater;
+                showModal('Ange PIN för att starta värmaren');
+                return;
+            }
+
+            console.log('Starting heater with token:', token.substring(0, 20) + '...');
+
+            try {
+                const response = await fetch('/api/start', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                console.log('Start response status:', response.status);
+
+                if (response.status === 401) {
+                    console.log('Token expired, re-authenticating');
+                    token = null;
+                    startHeater();
+                    return;
+                }
+
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Start successful:', data);
+                    updateStatus();
+                } else {
+                    const error = await response.text();
+                    console.error('Start failed:', error);
+                    showError('Misslyckades att starta värmaren');
+                }
+            } catch (error) {
+                console.error('Failed to start heater:', error);
+                showError('Nätverksfel: ' + error.message);
+            }
+        }
+
+        async function stopHeater() {
+            if (!token) {
+                pendingAction = stopHeater;
+                showModal('Ange PIN för att stoppa värmaren');
+                return;
+            }
+
+            console.log('Stopping heater with token:', token.substring(0, 20) + '...');
+
+            try {
+                const response = await fetch('/api/stop', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                console.log('Stop response status:', response.status);
+
+                if (response.status === 401) {
+                    console.log('Token expired, re-authenticating');
+                    token = null;
+                    stopHeater();
+                    return;
+                }
+
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Stop successful:', data);
+                    updateStatus();
+                } else {
+                    const error = await response.text();
+                    console.error('Stop failed:', error);
+                    showError('Misslyckades att stoppa värmaren');
+                }
+            } catch (error) {
+                console.error('Failed to stop heater:', error);
+                showError('Nätverksfel: ' + error.message);
+            }
+        }
+
+        function showModal(title) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('pinInput').value = '';
+            document.getElementById('errorMessage').classList.remove('show');
+            document.getElementById('pinModal').classList.add('show');
+            document.getElementById('pinInput').focus();
+        }
+
+        function closeModal() {
+            document.getElementById('pinModal').classList.remove('show');
+            pendingAction = null;
+        }
+
+        async function confirmPin() {
+            const pin = document.getElementById('pinInput').value;
+            console.log('Confirming PIN, length:', pin.length);
+
+            if (pin.length !== 4) {
+                showError('PIN måste vara 4 siffror');
+                return;
+            }
+
+            try {
+                console.log('Authenticating with PIN...');
+                const response = await fetch('/api/authenticate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ pin })
+                });
+
+                const data = await response.json();
+                console.log('Auth response:', data);
+
+                if (response.ok && data.success) {
+                    token = data.token;
+                    console.log('Token received:', token.substring(0, 20) + '...');
+                    console.log('Pending action:', pendingAction ? 'YES' : 'NO');
+                    closeModal();
+
+                    // Execute pending action
+                    if (pendingAction) {
+                        const action = pendingAction;
+                        pendingAction = null;
+                        console.log('Executing pending action...');
+                        action();
+                    }
+                } else {
+                    console.error('Auth failed:', data);
+                    showError('Felaktig PIN-kod');
+                }
+            } catch (error) {
+                console.error('Authentication failed:', error);
+                showError('Nätverksfel');
+            }
+        }
+
+        function showError(message) {
+            const errorElement = document.getElementById('errorMessage');
+            errorElement.textContent = message;
+            errorElement.classList.add('show');
+        }
+
+        // Enter key in PIN input
+        document.getElementById('pinInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                confirmPin();
+            }
+        });
+    </script>
+</body>
+</html>
