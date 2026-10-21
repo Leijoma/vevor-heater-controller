@@ -2,6 +2,15 @@
 
 Complete ESP32-based controller for Vevor diesel heaters with Arduino library.
 
+> ## ⚠️ Disclaimer: use at your own risk
+>
+> - This project is provided **"as is", without warranty of any kind**. **Use it entirely at your own risk.** The authors accept no liability for damage, injury, fire, carbon monoxide poisoning or any other loss.
+> - The **hardware setup is a test / prototype setup**, built on breadboards for experimentation. It is **not a finished product** and **lacks many safety features** (no independent over-temperature or flame monitoring, no watchdog that shuts the heater off if the controller hangs, no fuse or isolation by default, no tested enclosure, weak network security).
+> - The heater protocol was **reverse-engineered** and may behave differently on other models or firmware versions.
+> - Never leave a fuel-burning heater running unattended, always ensure ventilation, install a CO alarm, and keep the heater's original controller available as a way to turn it off.
+>
+> See [Safety and limitations](HARDWARE_SETUP.md#safety-and-limitations) for details.
+
 ## Features
 
 - ✅ **Full heater control** - Start, stop, and adjust power (1-10) remotely
@@ -439,7 +448,8 @@ MIT License - Free to use for personal and commercial projects
 
 ## Safety Warning
 
-⚠️ **IMPORTANT:**
+⚠️ **IMPORTANT:** This is a test setup, use at your own risk (see the disclaimer at the top and [HARDWARE_SETUP.md](HARDWARE_SETUP.md#safety-and-limitations)).
+
 - Diesel heaters produce heat and exhaust fumes
 - Ensure proper ventilation
 - Install carbon monoxide detector
